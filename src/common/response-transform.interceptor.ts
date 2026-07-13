@@ -9,6 +9,7 @@ export class ResponseTransformInterceptor implements NestInterceptor {
       map((data) => ({
         success: true,
         data,
+        timestamp: new Date().toISOString(),
       })),
     );
   }
