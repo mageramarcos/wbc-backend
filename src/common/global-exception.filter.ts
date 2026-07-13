@@ -18,32 +18,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       return response.status(status).send({
         success: false,
-        error: {
-          code: this.statusToCode(status),
-          message,
-        },
+        message: Array.isArray(message) ? message.join('; ') : message,
         statusCode: status,
+        timestamp: new Date().toISOString(),
       });
     }
 
     return response.status(500).send({
       success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
-      },
+      message: 'An unexpected error occurred',
       statusCode: 500,
+      timestamp: new Date().toISOString(),
     });
-  }
-
-  private statusToCode(status: number): string {
-    const codes: Record<number, string> = {
-      400: 'BAD_REQUEST',
-      404: 'NOT_FOUND',
-      409: 'CONFLICT',
-      422: 'VALIDATION_ERROR',
-      429: 'TOO_MANY_REQUESTS',
-    };
-    return codes[status] ?? 'INTERNAL_ERROR';
   }
 }
