@@ -154,9 +154,19 @@ suporte first-class a pino logger.
 ORM tipado com migrations declarativas, transações nativas e tipagem automática
 do schema do banco via `prisma generate`.
 
-**Transações:** operações multi-query que exigem atomicidade (create/update de
-produto com validação de categoria, remoção de categoria com verificação de
-produtos) usam `prisma.$transaction` para garantir consistência.
+**Transações:** operações multi-query usam `prisma.$transaction` interativo para
+garantir atomicidade e consistência dos dados. Dentro de uma transaction, todas as
+queries compartilham o mesmo snapshot do banco — ou todas confirmam juntas, ou
+nenhuma é aplicada. Isso evita estados inconsistentes como:
+
+- Um produto ser criado com uma categoria que já foi deletada
+- Uma categoria ser removida enquanto produtos estão sendo vinculados a ela
+- Dados parciais persistirem se uma das etapas falhar
+
+Métodos com transaction:
+- `ProductsService.create` — verifica categoria + cria produto (atômico)
+- `ProductsService.update` — verifica produto + categoria + atualiza (atômico)
+- `CategoriesService.remove` — verifica categoria + conta produtos + soft delete (atômico)
 
 ### Redis — Cache-Aside
 
