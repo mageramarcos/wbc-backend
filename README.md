@@ -170,8 +170,8 @@ Registros nunca são removidos fisicamente. O campo `status` controla a visibili
 
 ### Tratamento de erros
 
-`GlobalExceptionFilter` captura exceções HTTP, Prisma (P2025 = not found) e erros
-genéricos, retornando sempre o formato padronizado:
+`GlobalExceptionFilter` captura exceções HTTP, Prisma (P2002 = unique constraint → 409,
+P2025 = not found → 404) e erros genéricos, retornando sempre o formato padronizado:
 
 ```json
 {
