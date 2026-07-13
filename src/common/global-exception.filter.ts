@@ -1,5 +1,6 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { Prisma } from '@prisma/client';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -24,10 +25,29 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       });
     }
 
-    return response.status(500).send({
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      if (exception.code === 'P2002') {
+        return response.status(HttpStatus.CONFLICT).send({
+          success: false,
+          message: 'A record with this value already exists',
+          statusCode: HttpStatus.CONFLICT,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (exception.code === 'P2025') {
+        return response.status(HttpStatus.NOT_FOUND).send({
+          success: false,
+          message: 'Record not found',
+          statusCode: HttpStatus.NOT_FOUND,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    return response.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
       success: false,
       message: 'An unexpected error occurred',
-      statusCode: 500,
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       timestamp: new Date().toISOString(),
     });
   }
