@@ -60,19 +60,25 @@ export class CategoriesService {
   }
 
   async remove(id: number) {
-    const category = await this.findOne(id);
+    return this.prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({ where: { id } });
 
-    const productCount = await this.prisma.product.count({
-      where: { categoryId: id, status: { not: 2 } },
-    });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
 
-    if (productCount > 0) {
-      throw new ConflictException('Cannot delete category with active products');
-    }
+      const productCount = await tx.product.count({
+        where: { categoryId: id, status: { not: 2 } },
+      });
 
-    return this.prisma.category.update({
-      where: { id: category.id },
-      data: { status: 2, deletedAt: new Date() },
+      if (productCount > 0) {
+        throw new ConflictException('Cannot delete category with active products');
+      }
+
+      return tx.category.update({
+        where: { id },
+        data: { status: 2, deletedAt: new Date() },
+      });
     });
   }
 

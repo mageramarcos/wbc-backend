@@ -154,6 +154,10 @@ suporte first-class a pino logger.
 ORM tipado com migrations declarativas, transações nativas e tipagem automática
 do schema do banco via `prisma generate`.
 
+**Transações:** operações multi-query que exigem atomicidade (create/update de
+produto com validação de categoria, remoção de categoria com verificação de
+produtos) usam `prisma.$transaction` para garantir consistência.
+
 ### Redis — Cache-Aside
 
 Cache com invalidação na escrita. Listagens cacheadas por 60s, detalhes de produto

@@ -7,6 +7,7 @@ describe('CategoriesService', () => {
   let service: CategoriesService;
 
   const mockPrisma = {
+    $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(mockPrisma)),
     category: {
       create: vi.fn(),
       findMany: vi.fn(),

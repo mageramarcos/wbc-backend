@@ -7,17 +7,23 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateProductDto) {
-    await this.ensureCategoryExists(dto.categoryId);
+    return this.prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({ where: { id: dto.categoryId } });
 
-    return this.prisma.product.create({
-      data: {
-        name: dto.name,
-        description: dto.description,
-        price: dto.price,
-        stock: dto.stock,
-        categoryId: dto.categoryId,
-        status: dto.status ?? 0,
-      },
+      if (!category) {
+        throw new NotFoundException(`Category with id ${dto.categoryId} not found`);
+      }
+
+      return tx.product.create({
+        data: {
+          name: dto.name,
+          description: dto.description,
+          price: dto.price,
+          stock: dto.stock,
+          categoryId: dto.categoryId,
+          status: dto.status ?? 0,
+        },
+      });
     });
   }
 
@@ -58,15 +64,25 @@ export class ProductsService {
   }
 
   async update(id: number, dto: UpdateProductDto) {
-    await this.findOne(id);
+    return this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({ where: { id } });
 
-    if (dto.categoryId) {
-      await this.ensureCategoryExists(dto.categoryId);
-    }
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
 
-    return this.prisma.product.update({
-      where: { id },
-      data: dto,
+      if (dto.categoryId) {
+        const category = await tx.category.findUnique({ where: { id: dto.categoryId } });
+
+        if (!category) {
+          throw new NotFoundException(`Category with id ${dto.categoryId} not found`);
+        }
+      }
+
+      return tx.product.update({
+        where: { id },
+        data: dto,
+      });
     });
   }
 
@@ -77,13 +93,6 @@ export class ProductsService {
       where: { id },
       data: { status: 2, deletedAt: new Date() },
     });
-  }
-
-  private async ensureCategoryExists(categoryId: number) {
-    const category = await this.prisma.category.findUnique({ where: { id: categoryId } });
-    if (!category) {
-      throw new NotFoundException(`Category with id ${categoryId} not found`);
-    }
   }
 
   private buildStatusFilter(status?: string) {
