@@ -5,6 +5,7 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate
 RUN npm run build
+RUN npm ci --omit=dev
 
 FROM node:22-alpine AS runtime
 RUN addgroup -S scraper && adduser -S scraper -G scraper

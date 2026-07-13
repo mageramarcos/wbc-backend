@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto, FindCategoriesQueryDto } from './categories.dto';
@@ -13,7 +13,8 @@ export class CategoriesController {
 
   @Post()
   @ApiOperation({ summary: 'Criar nova categoria' })
-  @ApiResponse({ status: 201, description: 'Categoria criada com sucesso' })
+  @ApiBody({ type: CreateCategoryDto })
+  @ApiResponse({ status: 201, description: 'Categoria criada com sucesso', type: CreateCategoryDto })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
   create(@Body() dto: CreateCategoryDto) {
     return this.categoriesService.create(dto);
@@ -26,7 +27,7 @@ export class CategoriesController {
   @ApiQuery({ name: 'page', required: false, description: 'Número da página' })
   @ApiQuery({ name: 'limit', required: false, description: 'Itens por página' })
   @ApiQuery({ name: 'status', required: false, description: '0=Rascunho, 1=Ativo, 2=Deletado' })
-  @ApiResponse({ status: 200, description: 'Lista de categorias retornada' })
+  @ApiResponse({ status: 200, description: 'Lista de categorias retornada', type: [CreateCategoryDto] })
   findAll(@Query() query: FindCategoriesQueryDto) {
     return this.categoriesService.findAll(query);
   }
@@ -35,7 +36,7 @@ export class CategoriesController {
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(300)
   @ApiOperation({ summary: 'Buscar categoria por ID' })
-  @ApiResponse({ status: 200, description: 'Categoria encontrada' })
+  @ApiResponse({ status: 200, description: 'Categoria encontrada', type: CreateCategoryDto })
   @ApiResponse({ status: 404, description: 'Categoria não encontrada' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);
@@ -43,7 +44,8 @@ export class CategoriesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Atualizar categoria' })
-  @ApiResponse({ status: 200, description: 'Categoria atualizada' })
+  @ApiBody({ type: UpdateCategoryDto })
+  @ApiResponse({ status: 200, description: 'Categoria atualizada', type: UpdateCategoryDto })
   @ApiResponse({ status: 404, description: 'Categoria não encontrada' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCategoryDto) {
     return this.categoriesService.update(id, dto);

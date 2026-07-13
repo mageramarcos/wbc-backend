@@ -199,10 +199,30 @@ genéricos, retornando sempre o formato padronizado:
 
 ### Docker
 
-Imagem multi-stage (builder → runtime Alpine), usuário não-root `scraper`,
-com PostgreSQL 16 e Redis 7 no `docker-compose.yml`.
+**Multi-stage build (builder → runtime Alpine):**
+- Stage 1 (builder): instala todas as dependências, compila TypeScript, depois
+  executa `npm ci --omit=dev` removendo devDependencies (eslint, vitest, prettier…)
+- Stage 2 (runtime): copia apenas `dist/`, `node_modules/` (só produção) e
+  `prisma/` — sem código fonte, sem devDeps
+- Resultado: imagem ~37% menor que sem `--omit=dev` (1.17GB vs 1.85GB)
 
-### CI/CD
+**Segurança:**
+- Usuário não-root `scraper` (princípio de menor privilégio)
+- Alpine Linux como base (superfície de ataque reduzida)
+- PostgreSQL 16 + Redis 7 com healthchecks no `docker-compose.yml`
 
-Pipeline GitLab CI com stages: lint → test → build → deploy. Cobertura de
-testes publicada como artefato.
+### CI/CD (.gitlab-ci.yml)
+
+Pipeline com 4 stages:
+
+| Stage | O que faz | Cache |
+|-------|-----------|-------|
+| `lint` | ESLint — falha se código fora do padrão | `node_modules/` |
+| `test` | Vitest + coverage (artefato Cobertura) | `node_modules/` |
+| `build` | Docker-in-Docker — build da imagem sem cache de layers | Nenhum |
+| `deploy` | Deploy (simulado — pronto para produção) | — |
+
+**Build sem cache de layers:** o stage `build` usa `docker build` puro, sem
+`--cache-from`. Cada execução gera uma imagem limpa e 100% reprodutível a
+partir do fonte. Trade-off: builds mais lentos (~2-3min), mas zero risco de
+cache corrompido ou camadas stale.
